@@ -1,0 +1,180 @@
+--Query 1
+store.stock.aggregate([
+    {
+        '$sort': {
+            'Quantity': -1
+        }
+    }, {
+        '$limit': 1
+    }, {
+        '$project': {
+            'Product.Name': 1
+        }
+    }
+])
+
+--Query 2
+store.store_users.aggregate([
+    {
+        '$unwind': {
+            'path': '$Orders', 
+            'includeArrayIndex': 'string', 
+            'preserveNullAndEmptyArrays': False
+        }
+    }, {
+        '$group': {
+            '_id': '$_id', 
+            'totalSpent': {
+                '$sum': '$Orders.Total'
+            }
+        }
+    }, {
+        '$sort': {
+            'totalSpent': -1
+        }
+    }, {
+        '$limit': 1
+    }
+])
+
+--Query 3
+store.departments.aggregate([
+    {
+        '$unwind': {
+            'path': '$Employees', 
+            'includeArrayIndex': 'arrayIndex', 
+            'preserveNullAndEmptyArrays': False
+        }
+    }, {
+        '$sort': {
+            'Employees.Salary': -1
+        }
+    }, {
+        '$limit': 1
+    }, {
+        '$project': {
+            '_id': 0, 
+            'Department': '$Name', 
+            'Employee': '$Employees'
+        }
+    }
+])
+
+--Query 4
+
+store.store_users.aggregate([
+    {
+        '$unwind': {
+            'path': '$Orders'
+        }
+    }, {
+        '$group': {
+            '_id': '$Orders.Address:.Province', 
+            'count': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$group': {
+            '_id': None, 
+            'provinceCount': {
+                '$sum': 1
+            }
+        }
+    }, {
+        '$project': {
+            '_id': 0, 
+            'ProvinceCount': '$provinceCount'
+        }
+    }
+])
+
+--Query 5
+store.departments.aggregate([
+    {
+        '$project': {
+            '_id': 0, 
+            'Department': '$Name', 
+            'NumberOfEmployees': {
+                '$size': '$Employees'
+            }
+        }
+    }, {
+        '$sort': {
+            'NumberOfEmployees': -1
+        }
+    }, {
+        '$limit': 1
+    }
+])
+
+--Query 6
+store.store_users.aggregate([
+    {
+        '$unwind': {
+            'path': '$Orders'
+        }
+    }, {
+        '$unwind': {
+            'path': '$Orders.Items:'
+        }
+    }, {
+        '$unwind': {
+            'path': '$Orders.Items:.Product'
+        }
+    }, {
+        '$unwind': {
+            'path': '$Orders.Items:.Product.Discount'
+        }
+    }, {
+        '$group': {
+            '_id': '$Orders.Items:.Product.Category.Name', 
+            'maxDiscountPercent': {
+                '$max': '$Orders.Items:.Product.Discount.Percent'
+            }
+        }
+    }, {
+        '$sort': {
+            'maxDiscountPercent': -1
+        }
+    }, {
+        '$limit': 1
+    }
+])
+
+--Query 7
+store.store_users.aggregate([
+    {
+        '$unwind': {
+            'path': '$Orders'
+        }
+    }, {
+        '$match': {
+            'Orders.Payment.Provider': 'PayPal'
+        }
+    }, {
+        '$count': 'TotalOrders'
+    }
+])
+
+--Query 8
+store.store_users.aggregate([
+    {
+        '$unwind': {
+            'path': '$Sessions'
+        }
+    }, {
+        '$project': {
+            'sessionId': '$Sessions._id', 
+            'cartSize': {
+                '$size': '$Sessions.Cart'
+            }
+        }
+    }, {
+        '$sort': {
+            'cartSize': -1
+        }
+    }, {
+        '$limit': 1
+    }
+])

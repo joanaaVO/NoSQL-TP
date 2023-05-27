@@ -1,0 +1,52 @@
+--Query 1
+MATCH (p:Product)-[:HAS_STOCK]->(s:Stock)
+RETURN p.product_name AS product_name, s.quantity as stock_quantity
+ORDER BY stock_quantity DESC
+LIMIT 1
+
+--Query 2
+MATCH (od: OrderDetails)-[:BELONGS_TO_USER]->(u:User)
+WITH u.user_id AS userId, sum(toInteger(od.total)) AS totalSpent
+RETURN userId, totalSpent
+ORDER BY totalSpent DESC
+LIMIT 1
+
+--Query 3
+MATCH (e: Employee)-[: BELONGS_TO_DEPARTMENT]->(d: Department)
+WITH d.department_name AS departmentName, e
+ORDER BY e.salary DESC
+LIMIT 1
+RETURN departmentName AS Department, e AS Employee
+
+--Query 4
+MATCH (o:OrderDetails)-[HAS_DELIVERY_ADDRESS]->(a: Address)
+WITH a.country AS countryName, count(o) AS orderCount
+ORDER BY orderCount DESC
+LIMIT 1
+RETURN countryName AS Country, orderCount AS OrderCount
+
+--Query 5
+MATCH (d: Department)
+WITH d, [(e)-[: BELONGS_TO_DEPARTMENT]->(d) | e] AS employees
+RETURN d.department_name AS Department, size(employees) AS NumberOfEmpl
+ORDER BY NumberOfEmpl DESC
+LIMIT 1
+
+--Query 6
+MATCH (c:Category)<-[:BELONGS_TO_CATEGORY]-(p: Product)-[HAS_DISCOUNT]->(d:Discount)
+WITH c, d.discount_percent AS discountPercent
+ORDER BY discountPercent DESC
+LIMIT 1
+RETURN c.category_name AS Category, discountPercent AS MaxDiscount_Percent
+
+--Query 7
+MATCH (p:PaymentDetails)-[:BELONGS_TO_ORDER_DETAILS]->(od:OrderDetails)
+WHERE p.provider = 'PayPal'
+RETURN Count (od) AS TotalOrders
+
+--Query 8
+MATCH (ci:CartItem)-[:BELONGS_TO_SESSION]->(ss:ShoppingSession)
+WITH ss, count(ci) AS cartSize
+ORDER BY cartSize DESC
+LIMIT 1
+RETURN ss.session_id AS sessionId, cartSize
