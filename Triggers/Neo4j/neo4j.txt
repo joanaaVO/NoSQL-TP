@@ -1,0 +1,90 @@
+//1. Trigger to update OrderDetails total when OrderItems are added:
+CALL apoc.trigger.add('updateOrderDetails', '
+  MATCH (orderItem:OrderItem)
+  WHERE orderItem.created IS NOT NULL
+  MATCH (orderItem)-[:BELONGS_TO_ORDER_DETAILS]->(orderDetails:OrderDetails)
+  MATCH (orderItem)-[:CONTAINS_PRODUCT]->(product:Product)
+  OPTIONAL MATCH (product)-[:HAS_DISCOUNT]->(discount:Discount)
+  WITH orderDetails, product, coalesce(discount.amount, 0) AS discountPercentage
+  SET orderDetails.total = coalesce(orderDetails.total, 0) + (product.price * (1 - discountPercentage/100))
+', {phase: 'after'});
+
+//2. Trigger to update the modified_at in ShoppingSession when a CartItem is added
+CALL apoc.trigger.add('updateShoppingSessionModifiedAtOnCartItemAdd', '
+  MATCH (cartItem:CartItem)
+  WHERE cartItem.created IS NOT NULL
+  MATCH (cartItem)-[:BELONGS_TO_SESSION]->(shoppingSession:ShoppingSession)
+  SET shoppingSession.modified_at = datetime()
+', {phase: 'after'});
+
+3. Trigger to update the modified_at in ShoppingSession when a cart item is removed
+CALL apoc.trigger.add('updateShoppingSessionModifiedAtOnCartItemRemove', '
+  MATCH (cartItem:CartItem)
+  WHERE cartItem.deleted IS NOT NULL
+  MATCH (cartItem)-[:BELONGS_TO_SESSION]->(shoppingSession:ShoppingSession)
+  SET shoppingSession.modified_at = datetime()
+', {phase: 'after'});
+
+4. Trigger to update the modified_at in ShoppingSession when a cart item updated
+CALL apoc.trigger.add('updateShoppingSessionModifiedAtOnCartItemUpdate', '
+  MATCH (cartItem:CartItem)
+  WHERE cartItem.modified_at IS NOT NULL
+  MATCH (cartItem)-[:BELONGS_TO_SESSION]->(shoppingSession:ShoppingSession)
+  SET shoppingSession.modified_at = datetime()
+', {phase: 'after'});
+
+5. Trigger to update stock when a product is added to an order:
+CALL apoc.trigger.add('updateStockOnProductAddToOrder', '
+  MATCH (orderItem:OrderItem)
+  WHERE orderItem.created IS NOT NULL
+  MATCH (orderItem)-[:CONTAINS_PRODUCT]->(product:Product)
+  MATCH (product)-[:HAS_STOCK]->(stock:Stock)
+  SET stock.quantity = stock.quantity - 1
+', {phase: 'after'});
+
+6. Trigger to update stock when a product is associated with stock:
+CALL apoc.trigger.add('updateStockOnProductAssociation', '
+  MATCH (product:Product)-[:HAS_STOCK]->(stock:Stock)
+  WHERE EXISTS(stock.created)
+  SET stock.quantity = stock.quantity + 1
+', {phase: 'after'});
+
+7. Trigger to change last_modified in Product when changes are made to Category or Discount
+CALL apoc.trigger.add('productRelationshipModificationTrigger', '
+  MATCH (p:Product)
+  WHERE (p)-[:BELONGS_TO_CATEGORY|HAS_DISCOUNT]-()
+  SET p.last_modified = timestamp()
+', {phase: 'after'});
+
+//TRIGGERS PARA ADICIONAR OU REMOVER NODOS OU RELAÇÕES
+CALL apoc.trigger.add('notificationTriggerNodeAddedOrRemoved', '
+  UNWIND apoc.trigger.nodesByLabel({assignedLabels}) AS node
+  WITH node, CASE WHEN apoc.trigger.isDeleted(node) THEN "deleted" ELSE "added" END AS action
+  CALL apoc.trigger.addNotification("Node " + action + ": " + node, {}, {node: node, action: action})
+  CREATE (:Log {timestamp: timestamp(), message: "Node " + action, details: apoc.util.toJson(node)})
+  RETURN null
+', {phase: 'after'});
+
+CALL apoc.trigger.add('notificationTriggerRelationshipAddedOrRemoved', '
+  UNWIND apoc.trigger.relationshipsByType({assignedLabels}) AS rel
+  WITH rel, CASE WHEN apoc.trigger.isDeleted(rel) THEN "deleted" ELSE "added" END AS action
+  CALL apoc.trigger.addNotification("Relationship " + action + ": " + rel, {}, {relationship: rel, action: action})
+  CREATE (:Log {timestamp: timestamp(), message: "Relationship " + action, details: apoc.util.toJson(rel)})
+  RETURN null
+', {phase: 'after'});
+
+
+//TRIGGERS PARA ALTERAÇÕES EM NODOS OU RELAÇÕES
+CALL apoc.trigger.add('notificationTriggerNodeModified', '
+  UNWIND apoc.trigger.nodesByLabel({assignedLabels}) AS node
+  CALL apoc.trigger.addNotification("Node modified: " + node, {}, {node: node})
+  CREATE (:Log {timestamp: timestamp(), message: "Node modified", details: apoc.util.toJson(node)})
+  RETURN null
+', {phase: 'after'});
+
+CALL apoc.trigger.add('notificationTriggerRelationshipModified', '
+  UNWIND apoc.trigger.relationshipsByType({assignedLabels}) AS rel
+  CALL apoc.trigger.addNotification("Relationship modified: " + rel, {}, {relationship: rel})
+  CREATE (:Log {timestamp: timestamp(), message: "Relationship modified", details: apoc.util.toJson(rel)})
+  RETURN null
+', {phase: 'after'});

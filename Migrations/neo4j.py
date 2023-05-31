@@ -5,7 +5,7 @@ from py2neo import Graph, Node, Relationship
 oracle_connection = cx_Oracle.connect('store/12345@localhost:1521/xe')
 
 # Conexão com o base de dados do Neo4j
-neo4j_graph = Graph("bolt://localhost:7999", auth=("neo4j", "password"))
+neo4j_graph = Graph("bolt://localhost:7687") #, auth=("neo4j", "password"))
 
 # Consultas SQL para recuperar os dados das tabelas
 sql_store_users = "SELECT * FROM store_users"

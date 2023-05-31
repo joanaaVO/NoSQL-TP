@@ -34,7 +34,6 @@ def get_employees(id):
     employees = []
     for row in oracle_employees:
         employee = {
-            #'_id': row[0],
             'First Name': row[1],
             'Middle Name': row[2],
             'Last Name': row[3],

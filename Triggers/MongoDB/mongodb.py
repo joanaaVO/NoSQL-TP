@@ -41,4 +41,3 @@ def setup_change_streams():
         client.close()
 
 setup_change_streams()
-
