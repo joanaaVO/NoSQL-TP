@@ -178,3 +178,65 @@ store.store_users.aggregate([
         '$limit': 1
     }
 ])
+
+--Query 9
+store.departments.aggregate([
+    { 
+        $project: 
+        { 
+            "_id": 0, 
+            "Name": 1,  
+            "Employees": 1
+        }
+    }
+])
+
+--Query 10
+store.store_users.aggregate([
+    {
+        $unwind: "$Orders"
+    },{ 
+        $sort: 
+        {
+            "Orders.Created_At": 1 
+            } 
+        }, { 
+            $limit: 1 
+            }
+
+])
+
+--Query 11
+store.store_users.aggregate([
+    {
+        $sort: 
+        { 
+            "Registered At": 1 
+            }
+        }, {
+            $limit: 1 
+    }
+])
+
+--Query 12
+store.store_users.aggregate([
+    { 
+        $unwind: "$Orders" 
+        },{
+            $group: 
+            {
+                _id: "$Username",
+                Gasto: 
+                {
+                    $sum: "$Orders.Total"
+                    }
+            }
+        }, {
+            $sort: 
+            { 
+                Gasto: -1 
+                }
+            },{ 
+                $limit: 1 
+    }
+])
