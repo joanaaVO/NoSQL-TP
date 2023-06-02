@@ -50,3 +50,25 @@ WITH ss, count(ci) AS cartSize
 ORDER BY cartSize DESC
 LIMIT 1
 RETURN ss.session_id AS sessionId, cartSize
+
+--Query 9
+MATCH (e:Employee)-[:BELONGS_TO_DEPARTMENT]->(d:Department)
+RETURN e.first_name AS Employee, d.department_name AS Department
+
+--Query 10
+MATCH (od:OrderDetails)
+RETURN od.shipping_method AS ShippingMethod, od.created_at as Created_At
+ORDER BY od.created_at ASC
+LIMIT 1
+
+--Query 11
+MATCH (u:User)
+RETURN u.first_name AS FirstName, u.registered_at as Register
+ORDER BY u.registered_at ASC
+LIMIT 1
+
+--Query 12
+MATCH (u:User)<-[a:BELONGS_TO_USER]-(od:OrderDetails)
+RETURN u.username AS Username, SUM(od.total) AS TotalSpent
+ORDER BY TotalSpent DESC
+LIMIT 1
